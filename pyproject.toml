@@ -6,7 +6,10 @@ readme = "README.md"
 requires-python = "==3.14.*"
 dependencies = [
     "loguru>=0.7.3",
+    "matplotlib>=3.9",
+    "mediapipe>=0.10",
     "numpy>=2.0",
+    "opencv-contrib-python>=4.10",
     "pydantic>=2.0",
     "python-dotenv>=1.0",
 ]
@@ -55,5 +58,6 @@ docs = [
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
+pythonVersion = "3.14"
 # remember to adjust include paths as needed (eg scripts folder)
 include = ["src", "tests"]
