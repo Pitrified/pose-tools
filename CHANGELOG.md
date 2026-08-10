@@ -7,6 +7,30 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.1] - 2026-08-10
+
+### Added
+
+- `BaseLandmarkerFrame.close()` and context manager support, so `PoseLandmarkerFrame` and
+  `HandLandmarkerFrame` release their MediaPipe task deterministically:
+
+  ```python
+  with PoseLandmarkerFrame(model_path) as plf:
+      result = plf.detect(frame)
+  ```
+
+  Without it the task was only released by the garbage collector, and under mediapipe 1.0.0 that
+  surfaced at interpreter shutdown as `TypeError: 'NoneType' object is not callable` raised from
+  MediaPipe's own `PoseLandmarker.__del__`. Measured: one such traceback per process before,
+  none after. `close()` is idempotent.
+
+- `LandmarkerClosedError`, raised by `detect()` on a closed landmarker rather than letting the
+  call reach a released native object.
+
+  Not calling `close()` still works exactly as before - this is opt-in.
+
+---
+
 ## [0.2.0] - 2026-08-10
 
 ### Changed
