@@ -7,6 +7,29 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.0] - 2026-08-10
+
+### Changed
+
+- Require `mediapipe>=1.0` (was `>=0.10`), and lock 1.0.0.
+
+  1.0.0 removes `mediapipe.python.solutions.*` and
+  `mediapipe.framework.formats.landmark_pb2`. pose-tools never used either - it draws through
+  `mediapipe.tasks.python.vision` - so no source change was needed. The old floor was misleading:
+  it advertised support for 0.10.x while only 1.0.0 was ever tested, and it let consumers silently
+  resolve across the major boundary.
+
+  Consumers on 0.10.x must move to 1.0.0. Code that touches `mediapipe.python.solutions` or the
+  protobuf landmark types will not survive that jump.
+
+### Notes
+
+- Verified on Python 3.14.4 with mediapipe 1.0.0: ruff clean, pyright 0 errors, 81 tests pass.
+  The suite covers imports and pure-python logic; it does not run inference, which needs
+  `.task` model files that are not in the repository.
+
+---
+
 ## [0.1.0] - 2026-08-10
 
 Initial release. Extracts and unifies the pose tracking code shared by `climbing-wire`,
