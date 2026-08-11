@@ -4,7 +4,7 @@ Welcome to the **Pose Tools** documentation.
 
 Pose Tools is an installable Python library for pose tracking and analysis. It provides common utilities for working with pose data, including MediaPipe integration (hand and pose landmarkers), video frame loading, OpenCV/matplotlib display helpers, numpy-based landmark arrays with visibility masking, homography utilities, and landmark distance computation.
 
-It extracts and unifies shared code from three pose-related projects: `climbing-wire`, `holo-table`, and `abyss`.
+It exists to hold code shared across the pose projects. `abyss` consumes it today, pinned by git tag; `climbing-wire` and `holo-table` still carry their own copies and are the intended next consumers.
 
 ## Features
 
@@ -22,13 +22,13 @@ git clone https://github.com/Pitrified/pose-tools.git
 cd pose-tools
 
 # Install dependencies
-uv sync --all-extras --all-groups
+make sync
 
-# Run tests
-uv run pytest
+# Lint, typecheck and test
+make check
 
 # Start documentation server
-uv run mkdocs serve
+make docs
 ```
 
 ## Project Structure
@@ -36,10 +36,12 @@ uv run mkdocs serve
 ```
 pose-tools/
 ├── src/pose_tools/       # Main library code
-│   ├── config/             # Configuration models
-│   ├── data_models/        # Pydantic base models
+│   ├── geometry/           # Homography and signal tracking
+│   ├── landmark/           # MediaPipe landmarkers, arrays, drawing
 │   ├── metaclasses/        # Singleton metaclass
-│   └── params/             # Parameters and paths
+│   ├── params/             # Paths
+│   ├── utils/              # MediaPipe, OpenCV, matplotlib, numpy helpers
+│   └── video/              # Frames and video iteration
 ├── tests/                  # Test suite
 ├── docs/                   # Documentation (you are here)
 └── scratch_space/          # Experimental notebooks

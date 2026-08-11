@@ -15,32 +15,39 @@ on an audit of the repo's general state. Audit and open questions in [`00_start.
 
 ## Phases
 
+All questions answered, so the phases were executed in one pass rather than written up as separate
+sub-plans - each is a delete or a rewrite with nothing to sequence around.
+
 | #  | Phase                          | Plan | Status |
 | -- | ------------------------------ | ---- | ------ |
-| 1  | remove the shim                | -    | draft |
-| 2  | remove the import side effect  | -    | draft, shaped by Q2 |
-| 3  | docs vs reality                | -    | draft, shaped by Q4 |
-| 4  | scaffold removal               | -    | draft, conditional on Q1 |
-| 5  | landmarker tests               | -    | draft, conditional on Q3 |
+| 1  | remove the shim                | -    | done |
+| 2  | remove the import side effect  | -    | done |
+| 3  | scaffold removal               | -    | done |
+| 4  | Makefile                       | -    | done |
+| 5  | docs vs reality                | -    | done |
+| 6  | release v0.3.0                 | -    | in progress |
+| -  | landmarker tests               | [`../03_landmarker_tests/00_start.md`](../03_landmarker_tests/00_start.md) | spun off, per Q3 |
 
 Status values: draft / planned / in progress / done / superseded / discarded.
 
-Sketch of each, to be replaced by real sub-plans once the questions land:
+What each covered:
 
-- **1 - remove the shim.** Delete `geometry/landmark_geometry.py` and
-  `tests/geometry/test_landmark_geometry.py`. Fix the CHANGELOG v0.1.0 line and the
-  `abyss/docs/library/pose_tools_boundary.md` row that names it. Nothing imports it, so this is
-  a clean delete.
-- **2 - remove the import side effect.** `__init__.py` back to a docstring. `load_env` stays
-  callable for a caller that wants it. Settle `test_env_vars.py`, which currently passes only
-  because this box happens to have `~/cred/pose-tools/.env`.
-- **3 - docs vs reality.** The missing `guides/webapp_setup.md` in the mkdocs nav, the README claim
-  about climbing-wire and holo-table, the `~/cred` setup section, and the bare `uv run` commands.
-- **4 - scaffold removal.** Only if Q1 says yes: `env_type`, `sample_params`, `sample_config`,
-  `basemodel_kwargs`, `nokeys.env`, flatten `pose_tools_paths`, drop `pydantic` and
-  `python-dotenv`.
-- **5 - landmarker tests.** `pose.py` and `hand.py` against a faked MediaPipe task, following the
-  `FakeTask` / `FakeLandmarker` pattern already in `tests/landmark/test_base.py`.
+- **1 - remove the shim.** Deleted `geometry/landmark_geometry.py` and its test. The CHANGELOG
+  v0.1.0 line that announced it was **not** edited: that section records what actually shipped, so
+  the removal is recorded under v0.3.0 instead.
+- **2 - remove the import side effect.** `__init__.py` is a docstring. `load_env.py` went too
+  (Q1), and `python-dotenv` with it - it had no other user. `test_env_vars.py` deleted (Q2).
+- **3 - scaffold removal.** `env_type`, `sample_params`, `config/`, `data_models/`, `nokeys.env`,
+  their tests, and `tests/conftest.py` (which existed only to stub `SAMPLE_API_KEY`). Dropped
+  `pydantic`. `PoseToolsPaths` takes no arguments; `PoseToolsParams.set_env_type()` is gone.
+- **4 - Makefile.** Ported from the template minus `dev-<lib>` / `undev`, keeping `docs` and
+  `docs-build`.
+- **5 - docs vs reality.** README, `docs/index.md`, `docs/getting-started.md`, `AGENTS.md`,
+  `.github/copilot-instructions.md`, mkdocs nav. Replaced the 284-line `guides/params_config.md`
+  with `guides/params.md`; added `guides/makefile.md`; added a `CLAUDE.md` importing the copilot
+  instructions, which the repo lacked.
+- **6 - release v0.3.0.** Version bumped and CHANGELOG written. The tag and the abyss repin are
+  the remaining steps.
 
 ## Log
 
@@ -56,3 +63,13 @@ Append-only. Newest at the bottom.
   `landmark/{pose,hand,drawing}.py` or `utils/plt.py`. Docs drift: mkdocs nav points at a
   nonexistent `guides/webapp_setup.md`, README credits two consumers that do not exist and
   prescribes bare `uv run`, and there is no Makefile.
+- 2026-08-11 : Q1-Q5 answered, and executed phases 1-5 in one pass. Removed the shim, the
+  `load_env` side effect and module, and the whole template scaffold; dropped `pydantic` and
+  `python-dotenv`; flattened `PoseToolsPaths`; added the Makefile and `CLAUDE.md`; rewrote the
+  docs. Suite went 90 -> 71 tests, all passing, with ruff and pyright clean and
+  `mkdocs build --strict` succeeding. Landmarker tests spun off to `../03_landmarker_tests/`.
+- 2026-08-11 : tried raising `ruff.toml` `target-version` from `py313` to `py314`, to match
+  `requires-python = "==3.14.*"`. It surfaces 28 `TC001`/`TC002`/`TC003` findings
+  (typing-only imports) needing unsafe fixes across the codebase. Reverted - that is a lint
+  migration, not a cleanup. Recorded in `.github/copilot-instructions.md` so the mismatch is not
+  rediscovered as a surprise.

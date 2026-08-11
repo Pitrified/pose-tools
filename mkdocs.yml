@@ -77,9 +77,9 @@ nav:
   - Getting Started: getting-started.md
   - Guides:
       - UV Package Manager: guides/uv.md
+      - Makefile: guides/makefile.md
       - Pre-commit Hooks: guides/pre_commit.md
-      - Params / Config Pattern: guides/params_config.md
-      - Webapp setup: guides/webapp_setup.md
+      - Params: guides/params.md
   - API Reference: reference/
   - Contributing: contributing.md
 

@@ -3,7 +3,6 @@
 from pose_tools.params.pose_tools_params import PoseToolsParams
 from pose_tools.params.pose_tools_params import get_pose_tools_params
 from pose_tools.params.pose_tools_paths import PoseToolsPaths
-from pose_tools.params.sample_params import SampleParams
 
 
 def test_pose_tools_params_singleton() -> None:
@@ -18,7 +17,6 @@ def test_pose_tools_params_init() -> None:
     """Test initialization of PoseToolsParams."""
     params = PoseToolsParams()
     assert isinstance(params.paths, PoseToolsPaths)
-    assert isinstance(params.sample, SampleParams)
 
 
 def test_pose_tools_params_str() -> None:
@@ -27,4 +25,3 @@ def test_pose_tools_params_str() -> None:
     s = str(params)
     assert "PoseToolsParams:" in s
     assert "PoseToolsPaths:" in s
-    assert "SampleParams:" in s

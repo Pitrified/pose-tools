@@ -22,17 +22,19 @@ This repository uses specialized agents defined in `.github/agents/` to improve 
 
 ## Tech Stack Reference
 
-Python 3.13+ · MediaPipe · OpenCV · NumPy · Loguru · Pytest · Ruff · Pyright · Pre-commit
+Python 3.14 · MediaPipe · OpenCV · NumPy · Loguru · Pytest · Ruff · Pyright · Pre-commit · Make
 
 ## Scripts
 
-(Use `uv run` to execute commands in the environment)
+(Use `make`; every target runs through `uv run --no-sync`. A bare `uv run` re-syncs the environment.)
 
-- Test: `uv run pytest`
-- Lint: `uv run ruff check .`
-- Format: `uv run ruff format .`
-- Type Check: `uv run pyright`
-  (Extend with test/docs scripts as they are added.)
+- All checks: `make check`
+- Test: `make test`
+- Lint: `make lint`
+- Format: `make format`
+- Type Check: `make typecheck`
+- Docs: `make docs`
+- List targets: `make help`
 
 ## Adding a New Agent
 

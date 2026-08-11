@@ -74,9 +74,9 @@ Carried over from `python-project-template` and used by nothing but their own te
 `params/pose_tools_paths.py` dispatches on `EnvLocationType.LOCAL / RENDER`; nothing runs on
 Render. The `pydantic` and `python-dotenv` dependencies exist only for this scaffold.
 
-The user's answer on scope was **side effect only** for now: drop the `load_env()` call from
-`__init__.py`, keep the module callable. The rest of the scaffold is reported here for a separate
-decision (Q7).
+The first answer on scope was **side effect only**: drop the `load_env()` call from `__init__.py`,
+keep the module callable. Q1 then widened it to the whole scaffold, and `load_env.py` went with it -
+see the answers below.
 
 ### Test coverage
 
@@ -118,31 +118,36 @@ model file or a GPU.
 
 ## Open questions
 
-Numbering continues from the abyss expansion plan is *not* shared - this is a separate initiative,
-so it starts at Q1.
+Numbering is local to this initiative - it does not continue from the abyss expansion plan.
 
 - Q1: **Does the rest of the template scaffold go?** `env_type`, `sample_params`, `sample_config`,
   `basemodel_kwargs`, `nokeys.env`, plus flattening `pose_tools_paths` to no env dispatch, and
   dropping the `pydantic` / `python-dotenv` deps. This is what abyss did in its reboot. It is
   breaking for anything importing them - nothing does. Answered "side effect only" for the
   narrower question; this is the wider one, asked separately.
-  ANS: ...
+  ANS: remove. This supersedes the earlier "side effect only" scope. `load_env.py` goes too, and
+  `python-dotenv` with it - `load_env.py` was its only user, and with the scaffold gone there are
+  no env vars left to load.
 - Q2: **What happens to `test_env_vars.py`?** It is machine-dependent and fails on a fresh clone.
   Delete it, or move the variable into `conftest.py` so it tests nothing external?
-  ANS: ...
+  ANS: delete. It tested that `load_env` had run, and `load_env` is going.
 - Q3: **Do the landmarker tests land in this cleanup, or as their own feature?** Faking the
   MediaPipe task for `pose.py` and `hand.py` is real work, not a trim.
-  ANS: ...
+  ANS: their own feature. Spun off, not a phase here.
 - Q4: **Makefile now, or later?** The abyss and template Makefile exists and would port with the
   name changed. It is the cure for the bare `uv run` in the README, but it is scope growth on a
   cleanup.
-  ANS: ...
+  ANS: later, then reversed in the same exchange - do it now. Ported from the template minus the
+  `dev-<lib>` / `undev` targets, since pose-tools has no internal git dependencies. The `docs` and
+  `docs-build` targets stay: unlike abyss, pose-tools has a real `mkdocs.yml`.
 - Q5: **Version number for the release.** Removing the import side effect changes observable
   behaviour for anyone relying on it (nobody does, on the evidence). v0.2.2, or v0.3.0?
-  ANS: ...
+  ANS: minor bump, v0.3.0.
 
 ## Out of scope
 
+- **Landmarker tests** for `landmark/pose.py` and `landmark/hand.py`, per Q3. Spun off to
+  [`../03_landmarker_tests/00_start.md`](../03_landmarker_tests/00_start.md).
 - The face landmarker for the abyss expansion. That is `abyss/plans/01_abyss_expansion` phase 0,
   and it waits on abyss's own Q1.
 - The model downloader helper, already parked on `feat/model-downloader`.

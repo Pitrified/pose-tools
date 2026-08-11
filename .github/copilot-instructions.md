@@ -2,70 +2,59 @@
 
 ## Project overview
 
-`pose-tools` is an installable Python library for pose tracking and analysis. It provides common utilities for working with pose data, including MediaPipe integration (hand and pose landmarkers), video frame loading, OpenCV/matplotlib display helpers, numpy-based landmark arrays with visibility masking, homography utilities, and landmark distance computation. It extracts and unifies shared code from `climbing-wire`, `holo-table`, and `abyss`. Python 3.13, managed with **uv**.
+`pose-tools` is an installable Python library for pose tracking and analysis. It provides common utilities for working with pose data, including MediaPipe integration (hand and pose landmarkers), video frame loading, OpenCV/matplotlib display helpers, numpy-based landmark arrays with visibility masking, homography utilities, and landmark distance computation. Python 3.14, managed with **uv**.
 
 The package name is `pose_tools` throughout the source.
 
+It exists to hold code shared across the pose projects. `abyss` consumes it today, pinned by git tag; `climbing-wire` and `holo-table` still carry their own copies and are the intended next consumers. **`pose-tools` must never import a consumer.** The dependency is strictly one-way.
+
 ## Running & tooling
 
-```bash
-uv run pytest                        # run tests
-uv run ruff check .                  # lint (ruff, ALL rules enabled)
-uv run pyright                       # type-check (src/ and tests/ only)
+Use the Makefile; it exists so commands are discoverable and consistent.
 
-uv run mkdocs serve                  # MkDocs local docs server
+```bash
+make help        # list every target
+make sync        # uv sync --all-extras --all-groups
+make check       # lint + typecheck + test
+make test        # uv run --no-sync pytest
+make docs        # mkdocs serve
 ```
 
-Credentials live at `~/cred/pose-tools/.env` (loaded by `load_env()` in `src/pose_tools/params/load_env.py`).
+**Always run project code through `make`, or through `uv run --no-sync`.** A bare `uv run` re-syncs the environment from `uv.lock` first, which silently reverts a local editable install - including one a consumer set up with `make dev-pose-tools`. See `docs/guides/makefile.md`.
 
 ## Architecture layers
 
-| Layer       | Path                                               | Role                                                                |
-| ----------- | -------------------------------------------------- | ------------------------------------------------------------------- |
-| Params      | `src/pose_tools/params/pose_tools_params.py`       | Singleton `PoseToolsParams`; aggregates paths and sample params     |
-| Paths       | `src/pose_tools/params/pose_tools_paths.py`        | `PoseToolsPaths`; env-aware filesystem references                   |
-| Config      | `src/pose_tools/config/`                           | Pydantic `BaseModelKwargs` models for typed settings                |
-| Data models | `src/pose_tools/data_models/basemodel_kwargs.py`   | `BaseModelKwargs` - Pydantic base with `to_kw()` kwargs flattening  |
-| Metaclasses | `src/pose_tools/metaclasses/singleton.py`          | `Singleton` metaclass                                               |
-| Env type    | `src/pose_tools/params/env_type.py`                | `EnvStageType` (dev/prod) and `EnvLocationType` (local/render)      |
+| Layer       | Path                                          | Role                                          |
+| ----------- | --------------------------------------------- | --------------------------------------------- |
+| Landmark    | `src/pose_tools/landmark/`                    | MediaPipe landmarkers, arrays, drawing, models |
+| Video       | `src/pose_tools/video/`                       | `Frame` and video iteration                   |
+| Geometry    | `src/pose_tools/geometry/`                    | Homography, signal tracking                   |
+| Utils       | `src/pose_tools/utils/`                       | MediaPipe, OpenCV, matplotlib, numpy helpers  |
+| Params      | `src/pose_tools/params/pose_tools_params.py`  | Singleton `PoseToolsParams`; aggregates paths |
+| Paths       | `src/pose_tools/params/pose_tools_paths.py`   | `PoseToolsPaths`; filesystem references       |
+| Metaclasses | `src/pose_tools/metaclasses/singleton.py`     | `Singleton` metaclass                         |
 
 ## Key patterns
 
+**No shims.** Import a symbol from where it is defined. A module that only re-exports another module is not created here; if new code needs a home, it goes where it belongs and callers import it from there.
+
 **`PoseToolsParams` singleton**  
-Access project-wide config via `get_pose_tools_params()` from `src/pose_tools/params/pose_tools_params.py`. It aggregates `PoseToolsPaths` and `SampleParams`. Environment is controlled by `ENV_STAGE_TYPE` (`dev`/`prod`) and `ENV_LOCATION_TYPE` (`local`/`render`) env vars.
+Reach the paths through `get_pose_tools_paths()`, never by constructing `PoseToolsPaths()` directly.
 
 ```python
-from pose_tools.params.pose_tools_params import get_pose_tools_params
+from pose_tools.params.pose_tools_params import get_pose_tools_paths
 
-params = get_pose_tools_params()
-paths = params.paths          # PoseToolsPaths
+paths = get_pose_tools_paths()
 ```
 
-**`BaseModelKwargs`**  
-Extend `BaseModelKwargs` (not plain `BaseModel`) for any config that needs to be forwarded as `**kwargs` to a third-party constructor. `to_kw(exclude_none=True)` flattens a nested `kwargs` dict at the top level.
+The params layer is deliberately minimal: no env stage/location dispatch, no config models, no `load_env()`. pose-tools is a library with no secrets and no deployment target, so those were removed in v0.3.0 rather than carried on from the template. **Add them when something needs them, not before** - the same rule applies to new entries in `PoseToolsPaths`. See `docs/guides/params.md`.
+
+**Landmarkers hold a native task.** `BaseLandmarkerFrame` subclasses own a MediaPipe task object and must be closed. Use them as context managers:
 
 ```python
-class SampleConfig(BaseModelKwargs):
-    some_int: int
-    nested_model: NestedModel
-    kwargs: dict = Field(default_factory=dict)
-
-cfg = SampleConfig(some_int=1, nested_model=NestedModel(some_str="hi"), kwargs={"extra": True})
-cfg.to_kw(exclude_none=True)  # {"some_int": 1, "nested_model": ..., "extra": True}
+with PoseLandmarkerFrame(model_path) as plf:
+    result = plf.detect(frame)
 ```
-
-**Config / Params separation**
-
-- `src/pose_tools/config/` holds Pydantic `BaseModelKwargs` models that define the _shape_ of settings. Use `SecretStr` for every sensitive field. Never read env vars inside config models.
-- `src/pose_tools/params/` holds plain classes that load _actual values_ and instantiate config models. Non-secret values are written as Python literals; env-switching is achieved via `match` on `env_type.stage` / `env_type.location`. Secrets are the only values loaded from `os.environ[VAR]` (raises `KeyError` naturally when missing).
-- Every Params class accepts `env_type: EnvType | None = None` as its sole constructor argument. `__init__` only stores it and calls `_load_params()`. Loading is orchestrated via `_load_common_params()` then stage/location dispatch.
-- Expose the assembled settings through `to_config()` returning the corresponding Pydantic model. Always mask secret fields in `__str__` using `[REDACTED]`.
-- See `docs/guides/params_config.md` for the full reference with examples and common mistakes.
-
-The canonical reference implementations are `src/pose_tools/config/sample_config.py` and `src/pose_tools/params/sample_params.py`.
-
-**Env-aware paths**  
-`PoseToolsPaths.load_config()` dispatches on `EnvLocationType` (`LOCAL` / `RENDER`) to set environment-specific paths. Common paths (`root_fol`, `cache_fol`, `data_fol`) are always set in `load_common_config_pre()`.
 
 **`Singleton` metaclass**  
 Use `metaclass=Singleton` for any class that must have exactly one instance per process (e.g., `PoseToolsParams`). Reset in tests by clearing `Singleton._instances`.
@@ -74,7 +63,7 @@ Use `metaclass=Singleton` for any class that must have exactly one instance per 
 
 - Never use em dashes (`--` or `---` or Unicode `—`). Use a hyphen `-` or rewrite the sentence.
 - Use `loguru` (`from loguru import logger as lg`) for all logging.
-- Raise descriptive custom exceptions (e.g., `UnknownEnvLocationError`) rather than bare `ValueError`/`RuntimeError`.
+- Raise descriptive custom exceptions (e.g., `ModelNotFoundError`, `LandmarkerClosedError`) rather than bare `ValueError`/`RuntimeError`.
 
 ## Documentation
 
@@ -84,8 +73,8 @@ Always keep the `docs/` folder updated at the end of a task.
 
 - `docs/` holds MkDocs source. `mkdocs.yml` configures the site with the Material theme, mkdocstrings for API reference.
 - `docs/guides/` holds narrative guides related to tooling, setup, and project conventions. These are not part of the API reference and should not be written in docstring style.
-- `docs/library/` holds description of the core library code. This is not an API reference; write in narrative style with custom headings as needed. Can create subfolders for different domains.
-- `docs/reference/` is a virtual folder generated by `mkdocstrings` from docstrings in the source code. Do not write any files here; write docstrings in the source code instead. To reference a file inside this section, link using this structure: [`<some class/function name>`](,,/../reference/pose_tools/config/sample_config/) which would link to `src/pose_tools/config/sample_config.py`'s API reference page.
+- `docs/library/` holds description of the core library code, in narrative style rather than as an API reference. The folder does not exist yet; create it when there is something to put in it.
+- `docs/reference/` is a virtual folder generated by `mkdocstrings` from docstrings in the source code. Do not write any files here; write docstrings in the source code instead. To reference a file inside this section, link using this structure: [`<some class/function name>`](../../reference/pose_tools/landmark/pose/) which would link to `src/pose_tools/landmark/pose.py`'s API reference page.
 
 ### Docstring style
 
@@ -130,7 +119,7 @@ Rules:
 
 ## Linting notes
 
-- `ruff.toml` targets Python 3.13 with `select = ["ALL"]`. Key ignores: `COM812`, `D104`, `D203`, `D213`, `D413`, `FIX002`, `RET504`, `TD002`, `TD003`.
+- `ruff.toml` targets Python 3.13 with `select = ["ALL"]` (`requires-python` is 3.14; raising the target surfaces 28 `TC001`/`TC002`/`TC003` findings, so it is left as is for now). Key ignores: `COM812`, `D104`, `D203`, `D213`, `D413`, `FIX002`, `RET504`, `TD002`, `TD003`.
 - Tests additionally allow `ARG001`, `INP001`, `PLR2004`, `S101`.
 - Notebooks (`*.ipynb`) additionally allow `ERA001`, `F401`, `T20`.
 - `meta/*` additionally allows `INP001`, `T20`.
@@ -141,7 +130,7 @@ Rules:
 After every code change, run the full verification suite before considering the task done:
 
 ```bash
-uv run pytest && uv run ruff check . && uv run pyright
+make check
 ```
 
 Then update the docs.

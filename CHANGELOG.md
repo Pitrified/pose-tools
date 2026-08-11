@@ -7,6 +7,44 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.3.0] - 2026-08-11
+
+Cleanup pass. Everything removed here was template scaffold or indirection that no code used;
+`abyss`, the only consumer, imports none of it.
+
+### Removed
+
+- **The `load_env()` import side effect.** `import pose_tools` no longer reads
+  `~/cred/pose-tools/.env`. `params/load_env.py` is gone with it, along with the `python-dotenv`
+  dependency - it had no other user.
+- **`geometry/landmark_geometry.py`.** It defined nothing: a re-export of
+  `normalized_to_pixel_coordinates` and `are_valid_normalized_points`, both canonical in
+  `utils/mediapipe.py`. Import them from there. It was announced in 0.1.0 as "geometric measures
+  over landmark sets"; those measures were never written.
+- **The environment and config scaffold** carried over from `python-project-template`:
+  `params/env_type.py` (`EnvType`, `EnvStageType`, `EnvLocationType`, and their errors),
+  `params/sample_params.py`, `config/`, `data_models/`, and `nokeys.env`. The `pydantic`
+  dependency went with them.
+- `tests/config/test_env_vars.py`, which asserted an environment variable set by `load_env()` and
+  therefore passed or failed depending on whether the machine happened to have the cred file.
+
+### Changed
+
+- `PoseToolsPaths` takes no arguments and no longer dispatches on environment location. It resolves
+  `src_fol`, `root_fol`, `cache_fol` and `data_fol` and nothing else. `PoseToolsParams` aggregates
+  only the paths; `set_env_type()` is gone.
+- Added a `Makefile`. Run project code through `make` or `uv run --no-sync`; a bare `uv run`
+  re-syncs from `uv.lock` and reverts a local editable install.
+- Docs updated to match: new `docs/guides/makefile.md` and `docs/guides/params.md`, replacing
+  `docs/guides/params_config.md`. The mkdocs nav no longer points at a `guides/webapp_setup.md`
+  that never existed.
+
+### Migration
+
+Anything importing `pose_tools.geometry.landmark_geometry` should import from
+`pose_tools.utils.mediapipe` instead. Anything relying on `import pose_tools` to load a `.env` must
+now load it itself. Within the fleet, nothing does either.
+
 ## [0.2.1] - 2026-08-10
 
 ### Added
