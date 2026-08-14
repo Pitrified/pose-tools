@@ -37,8 +37,10 @@ The scope of this phase is set by Q4: face only, or face plus the pose and hand 
 
 ## Out of scope
 
-- Integration tests that run a real detection. They need the model file (Q1) and a sample video
-  with a face, and they belong behind a skip marker if they are ever added.
+- Integration tests that run a real detection. Both prerequisites now exist on this box - the model
+  via `ensure_model`, and a clip with a face at `~/data/pose/face01.mp4` - but neither is in git, so
+  such a test would fail on a fresh clone. It stays a manual check unless someone writes it behind a
+  skip marker keyed on both being present.
 - `utils/cv.py` and `utils/plt.py`, which need a display. Still untested, still a separate problem.
 
 ## Done when

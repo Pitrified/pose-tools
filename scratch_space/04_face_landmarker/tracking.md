@@ -71,3 +71,14 @@ Append-only. Newest at the bottom.
   yields no face, and the only clip on this box (`yoga01.mp4`, 299 frames) contains no detectable
   face anywhere in it - checked across the whole clip, including at
   `min_face_detection_confidence=0.2`. One webcam frame on g7 closes this.
+- 2026-08-14 : **ceiling closed, no webcam needed.** Fetched a second sample clip the same way
+  `yoga01.mp4` was made: a CC BY 3.0 Royal Society interview from Wikimedia Commons, first 25 MB by
+  HTTP range request, first 10 seconds re-encoded to mp4 with OpenCV, saved as
+  `~/data/pose/face01.mp4` and documented in that folder's README (attribution required if it is
+  ever redistributed). Measured against it: a face in **250 of 250** frames, **478 landmarks in
+  every one**, and a 4x4 transformation matrix in every frame with the option on. So
+  `FACE_LANDMARK_COUNT` is now confirmed by detection rather than inferred from the connection
+  tables. The iris centres land where they should - x=0.468 and x=0.530 on a centred face, one per
+  eye. Both drawing modes were rendered and inspected: contours plus irises reads clearly, the
+  tesselation buries the iris markers in the mesh, which is the case for the default Q3 chose.
+  The clip stays out of git; it is a local asset like `yoga01.mp4`, and no test depends on it.
