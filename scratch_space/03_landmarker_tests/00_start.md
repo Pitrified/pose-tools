@@ -37,3 +37,10 @@ patched constructor. That choice is the first thing to settle when this is picke
   marker keyed on `ModelManager` finding the model keeps a real integration path available where the
   models exist. Full faking keeps CI honest but tests less.
   ANS: ...
+
+## Possibly superseded
+
+[`../04_face_landmarker/`](../04_face_landmarker/) asks the same question as its own Q4: its test
+phase builds exactly the fixtures this initiative needs, and covering the pose and hand wrappers at
+the same time is barely more work. If that answer says yes, this folder becomes `superseded` and the
+work happens there.
