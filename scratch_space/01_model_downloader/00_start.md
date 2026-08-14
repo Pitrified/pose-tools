@@ -61,3 +61,37 @@ that deserve their own pass rather than being smuggled into an unrelated change.
 
 Pick it up when a second machine needs setting up, or when a consumer wants to choose a variant at
 runtime - that is the point where the current design actually blocks something.
+
+## Picked up, 2026-08-14
+
+The trigger arrived from the other side: `abyss` needs a face landmarker
+([`../04_face_landmarker/`](../04_face_landmarker/)), the box has no `face_landmarker.task`, and its
+Q1 asked whether to fetch it by hand again or build this. Building it, so the face work can call
+`ensure_model` instead of documenting a third curl command.
+
+### Decisions
+
+The open decisions from the sketch, resolved. Each was measured against the live CDN rather than
+assumed:
+
+- **Precision is not a dimension.** The sketch assumed `float16` / `float32` were both available.
+  Probed: `face_landmarker/.../float32/...` is a 404, while every `float16` URL is a 200. So the
+  table stores one URL per `(model type, variant)` and no precision axis. Adding one later is a
+  table change, not an API change.
+- **Variants, measured:** pose has `lite` (5.8 MB), `full` (9.4 MB), `heavy` (30.7 MB); hand
+  (7.8 MB) and face (3.8 MB) ship a single variant each. Default is `full` for pose, matching what
+  is already installed on the dev box, and the sole variant elsewhere.
+- **Filenames stay normalised.** `pose_landmarker.task`, not `pose_landmarker_full.task`. The
+  alternative breaks `abyss`, which already calls `get_model_path("pose_landmarker")`, for a benefit
+  nothing needs yet. **Named ceiling:** the installed variant is not recoverable from the filename,
+  so comparing accuracy across variants means re-downloading deliberately or tracking it outside the
+  library. A sidecar metadata file is the upgrade path when that day comes.
+- **No checksums.** MediaPipe publishes no per-file manifest to check against, so a checksum could
+  only pin what was downloaded once here, which protects nobody on a fresh machine. The download is
+  written to a `.part` file and renamed only on success, so the failure mode is "no file" rather
+  than "half a file". That is the property that actually matters.
+- **Network only when asked.** `ensure_model()` downloads, `get_model_path()` never does. Unchanged
+  from the sketch, and the reason the test suite can stay offline.
+- **No new dependency.** `urllib.request` from the standard library.
+
+Planned in [`tracking.md`](tracking.md).

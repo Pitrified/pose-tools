@@ -19,9 +19,10 @@ This is the phase that decides naming for everything after it, which is why it i
 
 ## Plan
 
-- Add to `landmark/model_manager.py`: `"face_landmarker"` in the `ModelType` literal and
-  `"face_landmarker.task"` in `MODEL_FILENAMES`. Both are one-line changes and nothing else in that
-  module is type-specific.
+- ~~Add to `landmark/model_manager.py`: `"face_landmarker"` in the `ModelType` literal and
+  `"face_landmarker.task"` in `MODEL_FILENAMES`.~~ **Done upstream** by
+  [`../01_model_downloader/`](../01_model_downloader/), which needed the entry to fetch the file.
+  `ModelManager().ensure_model("face_landmarker")` already works.
 - Write `landmark/face.py` mirroring `hand.py` line for line, substituting the face task:
   - imports from `mediapipe.tasks.python.vision.face_landmarker`
   - `create_face_landmarker` builds `BaseOptions(model_asset_path=str(model_path))` then
@@ -48,8 +49,7 @@ This is the phase that decides naming for everything after it, which is why it i
 ## Done when
 
 - `from pose_tools.landmark.face import FaceLandmarkerFrame` works.
-- `ModelManager().get_model_path("face_landmarker", must_exist=False)` returns
-  `~/.mediapipe/models/face_landmarker.task`.
 - `make check` is green: ruff with `select = ["ALL"]`, pyright, pytest.
-- Constructing a real landmarker is **not** an exit criterion, since the model file is not on this
-  box. It becomes a manual check once Q1 is settled.
+- A real `FaceLandmarkerFrame` is constructed against the downloaded model and closes cleanly. This
+  **is** an exit criterion now that Q1 is settled and the model is present; the earlier version of
+  this plan deferred it for want of a file.

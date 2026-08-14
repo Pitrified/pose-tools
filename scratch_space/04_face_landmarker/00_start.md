@@ -50,7 +50,9 @@ Two consequences worth stating early, because they break the symmetry with pose 
   transformation matrix instead.
 - **The model file is not on this box.** `~/.mediapipe/models/` holds `pose_landmarker.task` and
   `pose_landmarker_full.task` only. Nothing can be run end to end here until
-  `face_landmarker.task` is fetched - see Q1.
+  `face_landmarker.task` is fetched - see Q1. **Resolved on 2026-08-14**: the downloader was built
+  first, and `ensure_model("face_landmarker")` has fetched the file. The phases below still assume
+  the model may be missing, which stays correct for a fresh clone.
 
 ## Scope
 
@@ -91,7 +93,11 @@ Out:
   a second machine needs setting up, or when a consumer wants to choose a variant at runtime", and
   a third model type on a box that has none of it is the same class of problem. Against that: it
   brings three open decisions of its own into an initiative that already has four.
-  ANS: ...
+  ANS: **Option 2, built first.** See [`../01_model_downloader/`](../01_model_downloader/):
+  `ModelManager.ensure_model("face_landmarker")` fetches the file, and it has already pulled the
+  real model onto this box. So the constraint this plan was written around is gone - phase 1 can
+  construct a real landmarker, and its "done when" is no longer limited to imports. The three open
+  decisions were resolved there rather than dragged in here.
 - Q2: **Should the wrapper default `output_facial_transformation_matrixes` to `True`?** MediaPipe
   defaults it off. abyss wants it on, and it is the reason face was chosen. Leaving it off keeps
   the wrapper a faithful pass-through and costs abyss one kwarg; turning it on makes the wrapper

@@ -7,6 +7,39 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **`ModelManager.ensure_model(model_type, variant=None)`** - downloads a MediaPipe `.task` file if
+  it is missing and returns its path. Replaces a manual `curl` plus rename that every consumer and
+  every new machine had to repeat:
+
+  ```python
+  path = ModelManager().ensure_model("face_landmarker")
+  ```
+
+  It is the only method that touches the network, and only when the file is absent or `force=True`.
+  `get_model_path()` still never downloads, so test suites stay offline. The download is written to
+  a `.part` neighbour and renamed on success: a failed fetch leaves no file rather than a truncated
+  one.
+
+- `MODEL_URLS` and `DEFAULT_VARIANTS`, covering `lite` / `full` / `heavy` for pose and the single
+  variant each for hand and face. All URLs verified against the CDN. `full` is the pose default.
+
+- `face_landmarker` as a known model type, so the file resolves and downloads. The landmarker
+  wrapper itself is not here yet.
+
+- `UnknownModelVariantError` and `ModelDownloadError`.
+
+### Notes
+
+- Files are stored under the canonical name (`pose_landmarker.task`) whatever the variant, because
+  consumers already resolve that name. The installed variant is therefore not recoverable from
+  disk; re-download with `force=True` if it matters.
+- No checksum verification. MediaPipe publishes no per-file manifest, and the URLs are versioned by
+  `latest/`, so what lands can change without notice.
+
 ## [0.3.0] - 2026-08-11
 
 Cleanup pass. Everything removed here was template scaffold or indirection that no code used;
