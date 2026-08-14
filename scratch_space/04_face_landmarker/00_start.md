@@ -69,19 +69,28 @@ Out:
   size, smoothing choices - that is abyss's phase 1. pose-tools hands over landmarks and matrices.
 - Retrofitting tests for the pose and hand wrappers. That is
   [`../03_landmarker_tests/`](../03_landmarker_tests/), still unstarted - see Q4.
-- A model downloader. It exists as a deferred idea in `scratch_space/01-model-downloader/`, which
-  lives only on the unmerged `feat/model-downloader` branch (not on `main`, so there is nothing to
-  link to from here), and stays deferred unless Q1 says otherwise.
+- A model downloader, unless Q1 says otherwise. It exists as a deferred plan in
+  `scratch_space/01-model-downloader/`, which lives on the unmerged `feat/model-downloader` branch:
+  one commit, one file, no code, and it merges into `main` with no conflicts. Nothing about it is
+  stale except its base commit.
 
 ## Open questions
 
 - Q1: **How does `face_landmarker.task` get onto a machine?** It is not here, and `ModelManager`
-  only resolves and validates paths. Options: fetch it by hand with `curl` from Google's storage
-  URL and document that in the getting-started guide (consistent with how the pose model arrived);
-  or make this the moment the deferred model downloader (`01-model-downloader`) gets built. The
-  first keeps this initiative small; the second removes a manual step for every future consumer, at
-  the cost of reviving a branch that has diverged badly - it still carries the config scaffold that
-  v0.3.0 deleted, so it is a rewrite rather than a merge.
+  only resolves and validates paths. Two options:
+
+  1. Fetch it by hand with `curl` and document that, consistent with how the pose model arrived.
+     The URL follows the pattern the downloader plan already recorded:
+     `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task`.
+     No rename needed here, unlike the pose model.
+  2. Build the deferred downloader now. Its plan is written, it is one unmerged doc commit that
+     rebases onto `main` cleanly, and it names its own open decisions: variant naming, checksums,
+     and whether a library may touch the network at all.
+
+  Worth noting that its own deferral criterion has arguably just been met - it says pick it up "when
+  a second machine needs setting up, or when a consumer wants to choose a variant at runtime", and
+  a third model type on a box that has none of it is the same class of problem. Against that: it
+  brings three open decisions of its own into an initiative that already has four.
   ANS: ...
 - Q2: **Should the wrapper default `output_facial_transformation_matrixes` to `True`?** MediaPipe
   defaults it off. abyss wants it on, and it is the reason face was chosen. Leaving it off keeps

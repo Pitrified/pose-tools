@@ -45,3 +45,8 @@ Append-only. Newest at the bottom.
   phases: `FaceLandmarkerResult` has no world landmarks, unlike pose and hand, so the
   `get_landmarks_from_result` overload set is asymmetric by necessity; and `face_landmarker.task`
   is not on this box, so no phase may depend on running a real detection. Raised Q1-Q4.
+- 2026-08-14 : corrected Q1. I had called the `feat/model-downloader` branch badly diverged, reading
+  `git diff main..branch` as branch content when it is really main's v0.3.0 cleanup shown in
+  reverse - the branch is based on v0.2.1. It is one commit, one 63-line planning file, no code,
+  and `git merge-tree` reports no conflicts against `main`. Its plan already carries the CDN URL
+  pattern and the `pose_landmarker_full.task` rename trap, so option 2 in Q1 is cheaper than stated.
