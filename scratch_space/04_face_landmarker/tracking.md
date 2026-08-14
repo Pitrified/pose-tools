@@ -22,10 +22,10 @@ matrix out of a webcam. Analysis and decisions in [`00_start.md`](00_start.md).
 
 | #  | Phase                          | Plan                                                        | Status  |
 | -- | ------------------------------ | ----------------------------------------------------------- | ------- |
-| 1  | the wrapper                    | [`01_face_wrapper.md`](01_face_wrapper.md)                   | planned |
-| 2  | result helpers and constants   | [`02_result_helpers.md`](02_result_helpers.md)               | planned |
-| 3  | drawing                        | [`03_drawing.md`](03_drawing.md)                             | planned |
-| 4  | tests                          | [`04_tests.md`](04_tests.md)                                 | planned |
+| 1  | the wrapper                    | [`01_face_wrapper.md`](01_face_wrapper.md)                   | done    |
+| 2  | result helpers and constants   | [`02_result_helpers.md`](02_result_helpers.md)               | done    |
+| 3  | drawing                        | [`03_drawing.md`](03_drawing.md)                             | done    |
+| 4  | tests                          | [`04_tests.md`](04_tests.md)                                 | done    |
 | 5  | release                        | [`05_release.md`](05_release.md)                             | planned |
 
 Status values: draft / planned / in progress / done / superseded / discarded.
@@ -50,3 +50,24 @@ Append-only. Newest at the bottom.
   reverse - the branch is based on v0.2.1. It is one commit, one 63-line planning file, no code,
   and `git merge-tree` reports no conflicts against `main`. Its plan already carries the CDN URL
   pattern and the `pose_landmarker_full.task` rename trap, so option 2 in Q1 is cheaper than stated.
+- 2026-08-14 : Q1 answered by building the downloader first (`../01_model_downloader/`), which
+  removed the "no model on this box" constraint before implementation started. Q2 keeps the
+  transformation matrix off by default, Q3 draws contours plus irises, Q4 widens the test phase to
+  all three wrappers and supersedes `../03_landmarker_tests/`.
+- 2026-08-14 : phases 1-4 done on `feat/face-landmarker`. `landmark/face.py` mirrors `hand.py`;
+  `utils/mediapipe.py` gains a face overload, `get_facial_transformation_matrix()`, three connection
+  accessors and the iris constants; `drawing.py` gains `draw_face_landmarks`. Tests went from 82 to
+  127, covering the three wrappers from one parametrised fixture plus the drawing helpers, none of
+  them needing a model file. `make check` green.
+  Findings worth keeping. The iris **centres**, 468 and 473, appear in no MediaPipe connection
+  table - only the four-point rings do - so they are unreachable unless named, which is exactly what
+  abyss needs for an eye position. Writing the wrapper tests through a recording factory rather than
+  reading `_landmarker` off the instance avoided six `SLF001` findings and pins public behaviour
+  instead of internals. The pose branch's bare `ValueError` became `UnsupportedLandmarkInfoError`,
+  which my own phase-2 plan had put out of scope: it sits inside the function being changed and
+  subclasses `ValueError`, so it is a one-line consistency fix rather than a separate cleanup.
+  **Ceiling, named:** `FACE_LANDMARK_COUNT = 478` is still derived from the connection tables (max
+  index 477, plus the two centres no table mentions), not from a live detection. A blank frame
+  yields no face, and the only clip on this box (`yoga01.mp4`, 299 frames) contains no detectable
+  face anywhere in it - checked across the whole clip, including at
+  `min_face_detection_confidence=0.2`. One webcam frame on g7 closes this.

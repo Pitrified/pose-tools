@@ -1,8 +1,16 @@
 ---
-status: draft
+status: superseded
 ---
 
 # Landmarker tests
+
+**Superseded on 2026-08-14 by [`../04_face_landmarker/`](../04_face_landmarker/)**, whose Q4 asked
+whether to absorb this and was answered yes. The face branch wrote `tests/landmark/test_wrappers.py`
+covering the pose, hand and face wrappers from one parametrised fixture, and
+`tests/landmark/test_drawing.py` covering the drawing helpers. Both gaps listed below are closed;
+`utils/cv.py` and `utils/plt.py` remain untested, still for want of a display.
+
+Kept as the record of why those tests existed to be written. Original text follows.
 
 Spun off from the cleanup audit, [`../02_cleanup/00_start.md`](../02_cleanup/00_start.md), per its
 Q3: writing these is real work, not a trim, so it does not belong in that cleanup.

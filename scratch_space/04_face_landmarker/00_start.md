@@ -102,17 +102,20 @@ Out:
   defaults it off. abyss wants it on, and it is the reason face was chosen. Leaving it off keeps
   the wrapper a faithful pass-through and costs abyss one kwarg; turning it on makes the wrapper
   opinionated and imposes the compute on every consumer, including ones that only want landmarks.
-  ANS: ...
+  ANS: **Off, faithful pass-through.** MediaPipe's default stands; abyss opts in with one kwarg.
+  The wrapper behaves like its two siblings and holds no opinions.
 - Q3: **What does `draw_face_landmarks` draw by default?** Tesselation is 2556 connections over the
   468 mesh points and is visually dense; contours plus irises is the more readable default and is
   what the eye work
   actually cares about. Either way the other styles stay reachable through an argument.
-  ANS: ...
+  ANS: **Contours plus irises**, with tesselation reachable through an argument.
 - Q4: **Does this absorb `03_landmarker_tests`?** Writing face tests means building exactly the
   fixtures that initiative needs, and the pose and hand wrappers are thin enough that covering all
   three at once is barely more work than covering one. Alternatively face tests are written here in
   isolation and `03` stays as it is for later.
-  ANS: ...
+  ANS: **All three.** The pose and hand wrappers get the same coverage from the same fixtures, and
+  [`../03_landmarker_tests/`](../03_landmarker_tests/) is marked superseded rather than left
+  dangling.
 
 ## The boundary, restated
 

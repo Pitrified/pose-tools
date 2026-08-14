@@ -9,7 +9,7 @@ It exists to hold code shared across the pose projects. `abyss` consumes it toda
 ## Features
 
 - **Video frame handling**: Unified `Frame` dataclass wrapping MediaPipe images, with factory methods and video iteration
-- **MediaPipe integration**: Wrappers for pose and hand landmarkers using the Tasks API
+- **MediaPipe integration**: Wrappers for pose, hand and face landmarkers using the Tasks API, and a `ModelManager` that fetches the `.task` files
 - **Landmark arrays**: Numpy-based landmark representations with visibility masking and pixel coordinate conversion
 - **Display helpers**: OpenCV and matplotlib utilities for visualizing frames and landmarks
 - **Geometry utilities**: Homography computation, coordinate conversion, landmark distance measurement

@@ -11,6 +11,28 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`FaceLandmarkerFrame`** in `landmark/face.py`, plus `create_face_landmarker`, following the
+  pose and hand wrappers exactly. Detects 478 landmarks per face, the last ten being the irises.
+  `output_facial_transformation_matrixes` (the 4x4 head pose relative to the camera) and
+  `output_face_blendshapes` stay off by default, as in MediaPipe; pass them through
+  `landmarker_kwargs` to switch them on.
+
+- **Face support in `utils/mediapipe.py`**: a `get_landmarks_from_result` overload,
+  `get_facial_transformation_matrix()`, connection accessors for contours, tesselation and irises,
+  and named iris indices. The iris centres (468 right, 473 left) appear in no MediaPipe connection
+  table, so they are only reachable by name.
+
+- **`draw_face_landmarks`** in `landmark/drawing.py`. Draws contours plus irises by default rather
+  than the 2556-connection tesselation, which is reachable with `mesh="tesselation"`.
+
+- `UnsupportedLandmarkInfoError`, raised when a result type does not carry the requested info:
+  handedness on a pose result, or world landmarks on a face result. Face results have no world
+  landmarks, unlike pose and hand, so `"world"` has no face overload and raises. This replaces a
+  bare `ValueError` on the pose path; it subclasses `ValueError`, so existing handlers still catch.
+
+- Tests for all three landmarker wrappers and for `drawing`, neither of which had any. 127 tests,
+  up from 82, none requiring a model file.
+
 - **`ModelManager.ensure_model(model_type, variant=None)`** - downloads a MediaPipe `.task` file if
   it is missing and returns its path. Replaces a manual `curl` plus rename that every consumer and
   every new machine had to repeat:

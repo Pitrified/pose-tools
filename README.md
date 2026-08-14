@@ -1,6 +1,6 @@
 # Pose Tools
 
-An installable Python library for pose tracking and analysis. Provides common utilities for working with pose data, including MediaPipe integration (hand and pose landmarkers), video frame loading, OpenCV/matplotlib display helpers, numpy-based landmark arrays with visibility masking, homography utilities, and landmark distance computation.
+An installable Python library for pose tracking and analysis. Provides common utilities for working with pose data, including MediaPipe integration (pose, hand and face landmarkers, with model downloading), video frame loading, OpenCV/matplotlib display helpers, numpy-based landmark arrays with visibility masking, homography utilities, and landmark distance computation.
 
 It exists to hold code shared across the pose projects. `abyss` consumes it today, pinned by git tag; `climbing-wire` and `holo-table` still carry their own copies and are the intended next consumers.
 

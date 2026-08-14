@@ -1,7 +1,7 @@
 """Shared MediaPipe utilities for landmark detection.
 
 Provides landmark name/map constants, connection lists, and drawing spec
-helpers used by both pose and hand detection pipelines.
+helpers used by the pose, hand and face detection pipelines.
 
 All imports target the Tasks API (``mediapipe.tasks.python.vision.*``)
 which is the API surface available in mediapipe >= 0.10.
@@ -20,6 +20,8 @@ from mediapipe.tasks.python.vision import HandLandmarksConnections
 from mediapipe.tasks.python.vision import PoseLandmark
 from mediapipe.tasks.python.vision import PoseLandmarksConnections
 from mediapipe.tasks.python.vision.drawing_utils import DrawingSpec
+from mediapipe.tasks.python.vision.face_landmarker import FaceLandmarkerResult
+from mediapipe.tasks.python.vision.face_landmarker import FaceLandmarksConnections
 from mediapipe.tasks.python.vision.hand_landmarker import HandLandmark
 from mediapipe.tasks.python.vision.hand_landmarker import HandLandmarkerResult
 from mediapipe.tasks.python.vision.pose_landmarker import PoseLandmarkerResult
@@ -38,6 +40,32 @@ HAND_LANDMARK_MAP: dict[str, IntEnum] = cast(
 )
 
 
+# --- Face landmark constants ---
+# The face mesh is 468 points, indices 0-467, plus ten iris points. Each iris is
+# a centre followed by a four-point ring; only the rings appear in the
+# connection tables, so the centres are named here or they are unreachable.
+FACE_LANDMARK_COUNT = 478
+FACE_MESH_LANDMARK_COUNT = 468
+
+FACE_RIGHT_IRIS_CENTER = 468
+FACE_RIGHT_IRIS_RING: tuple[int, ...] = (469, 470, 471, 472)
+FACE_LEFT_IRIS_CENTER = 473
+FACE_LEFT_IRIS_RING: tuple[int, ...] = (474, 475, 476, 477)
+
+
+class UnsupportedLandmarkInfoError(ValueError):
+    """Raised when a result type does not carry the requested landmark info."""
+
+    def __init__(self, result_type: str, which_info: str) -> None:
+        """Initialise with the result type and the info it cannot provide.
+
+        Args:
+            result_type: Name of the landmarker result class.
+            which_info: The landmark info that was asked for.
+        """
+        super().__init__(f"{result_type} does not have {which_info} info.")
+
+
 def get_default_pose_connections() -> list:
     """Return the default pose skeleton connections."""
     return PoseLandmarksConnections.POSE_LANDMARKS
@@ -46,6 +74,24 @@ def get_default_pose_connections() -> list:
 def get_default_hand_connections() -> list:
     """Return the default hand skeleton connections."""
     return HandLandmarksConnections.HAND_CONNECTIONS
+
+
+def get_default_face_connections() -> list:
+    """Return the face contour connections, the readable default."""
+    return FaceLandmarksConnections.FACE_LANDMARKS_CONTOURS
+
+
+def get_face_tesselation_connections() -> list:
+    """Return the full face mesh connections."""
+    return FaceLandmarksConnections.FACE_LANDMARKS_TESSELATION
+
+
+def get_face_iris_connections() -> list:
+    """Return both iris rings as one connection list."""
+    return [
+        *FaceLandmarksConnections.FACE_LANDMARKS_LEFT_IRIS,
+        *FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_IRIS,
+    ]
 
 
 def get_spec_from_map(
@@ -104,32 +150,54 @@ def get_landmarks_from_result(
 ) -> list[Category] | None: ...
 
 
+# --- get_landmarks_from_result: face overloads ---
+# Face results carry normalized landmarks only: there is no face equivalent of
+# pose_world_landmarks, so "world" has no overload and raises at runtime.
+
+
+@overload
 def get_landmarks_from_result(
-    result: PoseLandmarkerResult | HandLandmarkerResult,
+    result: FaceLandmarkerResult,
+    which_info: Literal["normalized"],
+    idx: int = 0,
+) -> list[NormalizedLandmark] | None: ...
+
+
+def get_landmarks_from_result(
+    result: PoseLandmarkerResult | HandLandmarkerResult | FaceLandmarkerResult,
     which_info: Literal["world", "normalized", "handedness"] = "normalized",
     idx: int = 0,
 ) -> list[Landmark] | list[NormalizedLandmark] | list[Category] | None:
-    """Extract landmark data from a pose or hand landmarker result.
+    """Extract landmark data from a pose, hand or face landmarker result.
 
     Args:
-        result: A ``PoseLandmarkerResult`` or ``HandLandmarkerResult``.
+        result: A ``PoseLandmarkerResult``, ``HandLandmarkerResult`` or
+            ``FaceLandmarkerResult``.
         which_info: Which landmark list to retrieve.
-        idx: Index of the detected person/hand (default 0).
+        idx: Index of the detected person/hand/face (default 0).
 
     Returns:
         The requested landmark list, or ``None`` if *idx* is out of range.
+
+    Raises:
+        UnsupportedLandmarkInfoError: If the result type does not carry
+            *which_info*, e.g. handedness on a pose result or world landmarks
+            on a face result.
     """
     if isinstance(result, HandLandmarkerResult):
         if which_info == "world":
             ll = result.hand_world_landmarks
         elif which_info == "normalized":
             ll = result.hand_landmarks
-        elif which_info == "handedness":
+        else:
             ll = result.handedness
+    elif isinstance(result, FaceLandmarkerResult):
+        if which_info != "normalized":
+            raise UnsupportedLandmarkInfoError(type(result).__name__, which_info)
+        ll = result.face_landmarks
     else:
         if which_info == "handedness":
-            msg = "PoseLandmarkerResult does not have handedness info."
-            raise ValueError(msg)
+            raise UnsupportedLandmarkInfoError(type(result).__name__, which_info)
         if which_info == "world":
             ll = result.pose_world_landmarks
         else:
@@ -138,6 +206,30 @@ def get_landmarks_from_result(
     if idx >= len(ll):
         return None
     return ll[idx]
+
+
+def get_facial_transformation_matrix(
+    result: FaceLandmarkerResult,
+    idx: int = 0,
+) -> np.ndarray | None:
+    """Extract a face's 4x4 head pose matrix, relative to the camera.
+
+    The field is an empty list unless the landmarker was built with
+    ``output_facial_transformation_matrixes=True``, so a missing matrix and a
+    missing face are the same answer here: ``None``.
+
+    Args:
+        result: A face landmarker result.
+        idx: Index of the detected face (default 0).
+
+    Returns:
+        A ``(4, 4)`` array, or ``None`` if the option was off or *idx* is out
+        of range.
+    """
+    matrixes = result.facial_transformation_matrixes
+    if matrixes is None or idx >= len(matrixes):
+        return None
+    return np.asarray(matrixes[idx])
 
 
 def normalized_to_pixel_coordinates(
