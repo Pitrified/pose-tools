@@ -7,7 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [Unreleased]
+## [0.4.0] - 2026-08-14
+
+The face landmarker `abyss` needs for head-coupled perspective, and the model downloading that
+makes it usable on a machine that has no `.task` files yet. One release, because a landmarker
+nobody can fetch a model for is half a capability.
 
 ### Added
 

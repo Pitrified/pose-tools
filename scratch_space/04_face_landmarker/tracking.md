@@ -14,9 +14,11 @@ matrix out of a webcam. Analysis and decisions in [`00_start.md`](00_start.md).
 - **Face has no world landmarks.** Verified against MediaPipe 1.0.0: pose and hand both expose
   world landmarks, face does not. The `get_landmarks_from_result` overloads must not pretend
   otherwise, and metric information comes from `facial_transformation_matrixes` instead.
-- **The model file is absent on this box.** Only the pose models are in `~/.mediapipe/models/`.
-  Every phase below is written so it can be developed and tested without it; a real detection is a
-  manual check, not part of `make check`.
+- **~~The model file is absent on this box.~~** True when this was planned, and the reason every
+  phase was written to be developable without it. Q1 resolved it by building the downloader first,
+  so `ensure_model("face_landmarker")` now supplies the model and `~/data/pose/face01.mp4` supplies
+  a face. The constraint still holds for a fresh clone, so `make check` remains model-free and a
+  real detection remains a manual check.
 
 ## Phases
 
@@ -26,7 +28,7 @@ matrix out of a webcam. Analysis and decisions in [`00_start.md`](00_start.md).
 | 2  | result helpers and constants   | [`02_result_helpers.md`](02_result_helpers.md)               | done    |
 | 3  | drawing                        | [`03_drawing.md`](03_drawing.md)                             | done    |
 | 4  | tests                          | [`04_tests.md`](04_tests.md)                                 | done    |
-| 5  | release                        | [`05_release.md`](05_release.md)                             | planned |
+| 5  | release                        | [`05_release.md`](05_release.md)                             | done    |
 
 Status values: draft / planned / in progress / done / superseded / discarded.
 
@@ -82,3 +84,8 @@ Append-only. Newest at the bottom.
   eye. Both drawing modes were rendered and inspected: contours plus irises reads clearly, the
   tesselation buries the iris markers in the mesh, which is the case for the default Q3 chose.
   The clip stays out of git; it is a local asset like `yoga01.mp4`, and no test depends on it.
+- 2026-08-14 : phase 5, released as `v0.4.0`. One release covering both the downloader and the face
+  landmarker, since a landmarker nobody can fetch a model for is half a capability. Version bumped,
+  the changelog's `Unreleased` section became `0.4.0`, `make check` green on the branch before the
+  merge, and the annotated tag was created on `main` and verified to dereference to the merge commit
+  before being handed over for pushing - the v0.3.0 near-miss was a tag on the wrong branch.
